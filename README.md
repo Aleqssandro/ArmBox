@@ -1,50 +1,86 @@
-# ArmBox
-Estudos sobre adaptação do u-boot para  diversas arquiteturas de Tv Box para execução do SO Armbian
+# 📦 Armbian em TV Boxes Android
 
-A análise do u-boot nas tv box é possível através da conexão UART na PCB utilizando um adaptador USB para TTL, no caso das Tv Boxes o Baud Rate é de 115200 baud.
+Este repositório documenta a instalação e adaptação do Armbian em TV Boxes Android. Ele está dividido em duas partes principais:
 
-Para a modificação de um arquivo de imagem para ser compatível com uma Tv Box nova é necessário a configuração do u-boot e os arquivos Device Tree Blob (DTB) descrevem a configuração de hardware de um sistema para o kernel.
-A ideia é extrair o DTB original desses modelos e alterar o DTB presente em uma imagem do Armbian, de forma que ela compatibilize com a Tv Box.
+- ✅ **Parte 1**: Modelos suportados e passo a passo básico de instalação.
+- 🛠️ **Parte 2**: Engenharia reversa de novos modelos usando DTB/DTS e criação de ISOs customizadas.
 
-Para isso, o primeiro passo é a extração do DTB original da tv box. Nesse procedimento deve-se acessar uma conexão UART na tv box e após a completa inicialização acessar o terminal sudo:
-```sh
-su
-```
-Após isso é necessário fazer a cópia de uma partição ou de todas as partições na forma de um arquivo de imagem (ex: .img) para um dispositivo de armazenamento conectado a tv box, como um pendrive ou sd card, para isso
-```sh
-# 📌 Verificar as partições disponíveis no sistema
-ls /dev/block  # Exibe dispositivos como "emmc" (SD Card interno) ou "nand" (memória NAND)
+> ⚠️ **Aviso:** O processo pode **descaracterizar** o firmware original da TV Box. Siga por sua conta e risco.
 
-# 📌 Criar um diretório para montar a partição
-mkdir -p /mnt/sdcard  # Exemplo: Criando um ponto de montagem para um SD card
+---
 
-# 📌 Montar a partição desejada
-mount /dev/block/mmcblk0p1 /mnt/sdcard  # Substitua pelo nome correto da partição
+## 📚 Índice
 
-# 📌 Verificar partições que podem ser montadas na TV Box
-mount
+- [📦 Modelos Suportados](#-modelos-suportados)
+- [🚀 Instalação Básica](#-instalação-básica)
+- [🧠 Engenharia Reversa (DTB/DTS)](#-engenharia-reversa-dtbdts)
+  - [📄 O que são DTB e DTS](#-o-que-são-dtb-e-dts)
+  - [✏️ Como Editar e Recompilar](#-como-editar-e-recompilar)
+  - [💿 Gerar ISO Personalizada](#-gerar-iso-personalizada)
+- [🖼️ Imagens](#️-imagens)
+- [📌 Contribuições](#-contribuições)
+- [📃 Licença](#-licença)
 
-# 📌 Criar um arquivo de imagem da partição da Tv Box
-dd if=/dev/block/nand0p1 of=/mnt/sdcard/particao.img  # Substitua "nand0p1" pela partição correta
+---
 
-# 📌 Após a cópia, desmonte a partição para evitar corrupção de dados
-umount /mnt/sdcard
+## 📦 Modelos Suportados
 
-# 📌 Montar a imagem da partição da tv box para ver seus dados
-fdisk -l caminho_para_arquivo.img # Verificar as partições internas na imagem
-mount -o loop,offset=$((8192 * 512)) caminho_para_arquivo.img /mnt # Exemplo de montagem da imagem; 8192 -> é o setor de início da partição
-```
+Consulte os modelos já testados com status de compatibilidade, SoC, RAM e instruções específicas:
 
-Exemplo de uso, o dispositivo usado é um SD card com a partição que será montada chamada de "mmcblk0p1". A pasta que será montada é "/mnt/sdcard". A partição de interesse da tv box é "nand0p1"
-```sh
-su
-mkdir /mnt/sdcard
-mount /dev/block/mmcblk0p1 /mnt/sdcard
-dd if=/dev/block/nand0p1 of=/mnt/sdcard/particao.img
-umount /mnt/sdcard
-```
-Explicação das conversões de DTB para DTS e vice versa
-```sh
-utc -I dtb -O dts -o <path for output>/deviceTree.dts <path for input>/<file name>.dtb #Conversão de DTB para DTS
-utc -I dts -O dtb -o <path for output>/deviceTree.dtb <path for input>/<file name>.dts #Conversão de DTS para DTB
-```
+👉 [`catalogo-modelos/modelos-suportados.md`](catalogo-modelos/modelos-suportados.md)
+
+---
+
+## 🚀 Instalação Básica
+
+Tutorial simples e direto para instalar Armbian em modelos suportados:
+
+👉 [`catalogo-modelos/passo-a-passo-basico.md`](catalogo-modelos/passo-a-passo-basico.md)
+
+---
+
+## 🧠 Engenharia Reversa (DTB/DTS)
+
+Esta parte é voltada para quem deseja adaptar o Armbian para **novos modelos de TV Box**.
+
+### 📄 O que são DTB e DTS
+
+Explicação dos arquivos Device Tree, como extraí-los e por que são importantes:
+
+👉 [`engenharia-reversa/introducao-dtb-dts.md`](engenharia-reversa/introducao-dtb-dts.md)
+
+### ✏️ Como Editar e Recompilar
+
+Passo a passo para converter `.dtb` em `.dts`, editar e recompilar:
+
+👉 [`engenharia-reversa/editar-dts-dtb.md`](engenharia-reversa/editar-dts-dtb.md)
+
+### 💿 Gerar ISO Personalizada
+
+Como criar uma imagem customizada do Armbian com seu próprio DTB:
+
+👉 [`engenharia-reversa/gerar-iso-personalizada.md`](engenharia-reversa/gerar-iso-personalizada.md)
+
+---
+
+## 🖼️ Imagens
+
+Screenshots, exemplos de estrutura e imagens dos dispositivos:
+
+👉 [`/imagens`](imagens/)
+
+---
+
+## 📌 Contribuições
+
+Pull requests são bem-vindos! Para contribuições maiores, abra uma issue primeiro.
+
+---
+
+## 📃 Licença
+
+Distribuído sob a licença [MIT](LICENSE).
+
+---
+
+> Mantenedor: [Aleqssandro](https://github.com/Aleqssandro)
