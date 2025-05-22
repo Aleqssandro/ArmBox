@@ -7,11 +7,11 @@ cd ~/tv-box/ik316/ # Nesse diretório devem ser copiadas as ISOS a serem utiliza
 
 mkdir mnt/miniarch-boot/
 mkdir mnt/miniarch-rootfs/
-mkdir mnt/armbian/
+mkdir mnt/armbian-rootfs/
 mkdir mnt/ik316-custom/
-mkdir boot-miniarch/
-mkdir lib-miniarch/ # modules e firmware 
-mkdir rootfs-armbian/
+mkdir miniarch-boot/
+mkdir miniarch-lib/ # modules e firmware 
+mkdir armbian-rootfs/
 ```
 
 ## Etapa 2 - Extração do u-boot do miniarch e dos arquivos de lib
@@ -30,8 +30,8 @@ sudo partprobe $LOOP # Atualiza tabelas
 sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
 
 # Montar partição e copiar os arquivos
-mount /dev/mapper/loopXpX mnt/ miniarch-boot/ # Partição boot
-cp -r mnt/miniarch-boot/* boot-miniarch/
+mount /dev/mapper/loopXpX mnt/miniarch-boot/ # Partição boot
+cp -r mnt/miniarch-boot/* miniarch-boot/
 
 # Desmontar a partição
 umount mnt/miniarch-boot/
@@ -40,14 +40,14 @@ umount mnt/miniarch-boot/
 Montando a segunda partição para acessar o diretório /lib e copiar os arquivos
 ```shell
 # Montar a partição com o rootfs
-sudo mount /dev/mapper/loopXpX mnt/miniarch-rootfs
+sudo mount /dev/mapper/loopXpX mnt/miniarch-rootfs/
 
 # Copiar arquivos necessários
-cp -r mnt/miniarch-rootfs/lib/modules lib-miniarch/
-cp -r mnt/miniarch-rootfs/lib/firmware lib-miniarch/
+cp -r mnt/miniarch-rootfs/lib/modules miniarch-lib/
+cp -r mnt/miniarch-rootfs/lib/firmware miniarch-lib/
 
 # Desmontar e limpar
-sudo umount /mnt/imgroot
+sudo umount mnt/miniarch-rootfs
 sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
 ```
@@ -67,21 +67,53 @@ sudo partprobe $LOOP # Atualiza tabelas
 sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
 
 # Montar partição e copiar os arquivos com links simbólicos
-mount /dev/mapper/loopXpX mnt/armbian/
-sudo rsync -aAXv --exclude='/boot/*' mnt/armbian/ rootfs-armbian/
+mount /dev/mapper/loopXpX mnt/armbian-rootfs/
+sudo rsync -aAXv mnt/armbian-rootfs/ armbian-rootfs/
 
 # Desmontar a partição
-sudo umount mnt/armbian/
+sudo umount mnt/armbian-rootfs/
 sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
 ```
 
 ## Etapa 4 - Criar uma iso com espaço reservado para o bootloader e para o rootfs
+Nessa metodologia foi escolhido realizar a criação de uma ISO em branco, para evitar sobreposição de partições. Nesse projeto, foi reservado o primeiro 1MiB para o bootloader do sistema customizado e o restante do espaço será uma partição ext4 para o rootfs.
+
+```shell
+tamanho=$((2)) # X deve ser o tamanho em GB da ISO que deverá ser criada, nesse caso é 2
+count=$((tamanho*1024)) # Totalizando 2048 MB
+dd if=/dev/zero of=ik316-custom.img bs=1M count=$count status=progress
+parted ik316-custom.img --script mklabel msdos
+parted ik316-custom.img --script mkpart primary ext4 1MiB 100% # Espaço de 1MiB para o bootloader
+```
 
 ## Etapa 5 - Copiar o bootloader e o rootfs para a ISO customizada
+Nesta etapa é gravado o bootloader extraido do miniarch no primeiro 1MiB da iso customizada.
+
+```shell
+dd if=miniarch-boot/bootloader/bootloader.bin of=ik316-custom.img bs=1024 seek=8 conv=notrunc # Revise o caminho do bootloader em 'if'
+```
 
 ## Etapa 6 - Substituir todos os arquivos do diretório /boot do rootfs da iso-custom pelos arquivos contido na pasta "boot-miniarch"
+```shell
+fdisk -l ik316-custom.img # Identifica qual partição é rootfs
+
+# Criar loop
+LOOP=$(sudo losetup -f --show ik316-custom.img)
+echo $LOOP
+
+# Adicionar partições
+sudo partprobe $LOOP # Atualiza tabelas
+sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
+
+# Montar partição e copiar os arquivos com links simbólicos
+mount /dev/mapper/loopXpX mnt/ik316-custom/ # Montar o loop referente a partição rootfs do ik316-custom.img
+
+sudo rsync -aAXv --exclude='/boot/*' armbian-rootfs/ mnt/ik316-custom/
+```
 
 ## Etapa 7 - Editar os caminhos no /boot da iso-custom
 
+
 ## Etapa 8 - Substituir o modules e o firmware do armbian pelo do miniarch
+
