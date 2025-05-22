@@ -19,25 +19,28 @@ Para essa etapa é necessário extrair a pasta boot da iso do miniarch, ela se e
 
 Montando a iso do MiniArch no diretório criado e copiando os arquivos de interesse
 ```shell
-fdisk -l img-miniarch.img 
-offset=$(('sector-start-miniarch'*512))
-echo $offset
-mount -o loop,offset=$offset img-miniarch.img mnt/miniarch-boot/
-cp -r mnt/miniarch-boot/* boot-miniarch/
-umount mnt/miniarch-boot/
-```
+fdisk -l img-miniarch.img # Identifica qual partição é boot e qual é rootfs
 
-Montando a segunda partição para acessar o diretório /lib
-```shell
 # Criar loop
 LOOP=$(sudo losetup -f --show img-miniarch.img)
+echo $LOOP
 
 # Adicionar partições
 sudo partprobe $LOOP # Atualiza tabelas
 sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
 
-# Montar partição desejada
-sudo mount /dev/mapper/loopXp2 mnt/miniarch-rootfs # Partição rootfs
+# Montar partição e copiar os arquivos
+mount /dev/mapper/loopXpX mnt/ miniarch-boot/ # Partição boot
+cp -r mnt/miniarch-boot/* boot-miniarch/
+
+# Desmontar a partição
+umount mnt/miniarch-boot/
+```
+
+Montando a segunda partição para acessar o diretório /lib e copiar os arquivos
+```shell
+# Montar a partição com o rootfs
+sudo mount /dev/mapper/loopXpX mnt/miniarch-rootfs
 
 # Copiar arquivos necessários
 cp -r mnt/miniarch-rootfs/lib/modules lib-miniarch/
@@ -47,18 +50,30 @@ cp -r mnt/miniarch-rootfs/lib/firmware lib-miniarch/
 sudo umount /mnt/imgroot
 sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
-
 ```
 
 ## Etapa 3 - Extração do rootfs do Armbian
 Nessa etapa, deve-se montar a partição rootfs da img do Armbian e utilizar alguns comandos para clonar todos os arquivos dessa partição para uma pasta, incluindo arquivos, diretórios, links simbólicos e etc.
 
 ```shell
-fdisk -l img-armbian.img 
-offset=$(('sector-start-armbian'*512))
-echo $offset
-mount -o loop,offset=$offset img-armbian.img mnt/armbian/
+fdisk -l img-armbian.img # Identifica qual partição é rootfs
 
+# Criar loop
+LOOP=$(sudo losetup -f --show img-armbian.img)
+echo $LOOP
+
+# Adicionar partições
+sudo partprobe $LOOP # Atualiza tabelas
+sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
+
+# Montar partição e copiar os arquivos com links simbólicos
+mount /dev/mapper/loopXpX mnt/armbian/
+sudo rsync -aAXv --exclude='/boot/*' mnt/armbian/ rootfs-armbian/
+
+# Desmontar a partição
+sudo umount mnt/armbian/
+sudo kpartx -d $LOOP
+sudo losetup -d $LOOP
 ```
 
 ## Etapa 4 - Criar uma iso com espaço reservado para o bootloader e para o rootfs
