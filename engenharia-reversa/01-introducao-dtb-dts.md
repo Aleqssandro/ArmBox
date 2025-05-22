@@ -119,7 +119,7 @@ Você pode usar ferramentas como:
 
 ```bash
 sudo apt install minicom
-minicom -D /dev/ttyUSB0 -b 115200
+picocom -D /dev/ttyUSB0 -b 115200
 ```
 
 ou
