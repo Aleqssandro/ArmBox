@@ -94,6 +94,33 @@ Nesta etapa é gravado o bootloader extraido do miniarch no primeiro 1MiB da iso
 dd if=miniarch-boot/bootloader/bootloader.bin of=ik316-custom.img bs=1024 seek=8 conv=notrunc # Revise o caminho do bootloader em 'if'
 ```
 
+```shell
+# Identificar partição rootfs
+fdisk -l ik316-custom.img
+
+# Criar loop device
+LOOP=$(sudo losetup -f --show ik316-custom.img)
+echo $LOOP
+
+# Mapear partições
+sudo partprobe $LOOP
+sudo kpartx -av $LOOP
+
+# Formatar a partição rootfs em ext4
+sudo mkfs.ext4 /dev/mapper/loopXpX
+
+# Montar a partição rootfs
+sudo mount /dev/mapper/loopXpX mnt/ik316-custom/
+
+# Copiar todo o conteúdo do rootfs do Armbian
+sudo rsync -aAXv armbian-rootfs/ mnt/ik316-custom/
+
+# Desmontar
+sudo umount mnt/ik316-custom/
+sudo kpartx -d $LOOP
+sudo losetup -d $LOOP
+```
+
 ## Etapa 6 - Substituir todos os arquivos do diretório /boot do rootfs da iso-custom pelos arquivos contido na pasta "boot-miniarch"
 ```shell
 fdisk -l ik316-custom.img # Identifica qual partição é rootfs
