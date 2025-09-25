@@ -30,7 +30,7 @@ sudo partprobe $LOOP # Atualiza tabelas
 sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
 
 # Montar partição e copiar os arquivos
-mount /dev/mapper/loopXpX mnt/miniarch-boot/ # Partição boot
+sudo mount /dev/mapper/loopXpX mnt/miniarch-boot/ # Partição boot
 cp -r mnt/miniarch-boot/* miniarch-boot/
 
 # Desmontar a partição
