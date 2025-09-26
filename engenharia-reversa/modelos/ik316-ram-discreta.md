@@ -63,45 +63,20 @@ echo $LOOP
 sudo partprobe $LOOP # Atualiza tabelas
 sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
 
-# Montar partição e copiar os arquivos com links simbólicos
-sudo mount /dev/mapper/loopXpX mnt/armbian-rootfs/
-sudo rsync -aAXv mnt/armbian-rootfs/ armbian-rootfs/
-
-# Desmontar a partição
-sudo umount mnt/armbian-rootfs/
-sudo kpartx -d $LOOP
-sudo losetup -d $LOOP
-```
-
-```shell
-fdisk -l img-armbian.img # Identifica qual partição é boot e qual é rootfs
-
-# Criar loop
-LOOP=$(sudo losetup -f --show img-miniarch.img)
-echo $LOOP
-
-# Adicionar partições
-sudo partprobe $LOOP # Atualiza tabelas
-sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
-
-# Montar partição e copiar os arquivos
+# Montar partição boot e copiar os arquivos
 sudo mount /dev/mapper/loopXpX mnt/armbian-boot/ # Partição boot
 sudo rsync -aAXv mnt/armbian-boot/* armbian-boot/
 
-# Desmontar a partição
+# Desmontar a partição boot
 sudo umount mnt/armbian-boot/
-```
 
-Montando a segunda partição para acessar o rootfs e copiar os arquivos
-```shell
-# Montar a partição com o rootfs
+# Montar partição rootfs e copiar os arquivos
 sudo mount /dev/mapper/loopXpX mnt/armbian-rootfs/
+sudo rsync -aAXv mnt/armbian-rootfs/ armbian-rootfs/
 
-# Copiar arquivos necessários
-sudo rsync -aAXv mnt/armbian-rootfs/* armbian-rootfs/
+# Desmontar a partição rootfs
+sudo umount mnt/armbian-rootfs/
 
-# Desmontar e limpar
-sudo umount mnt/armbian-rootfs
 sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
 ```
@@ -144,55 +119,19 @@ sudo mount /dev/mapper/loopXpX mnt/ik316-custom/
 
 # Copiar todo o conteúdo do rootfs do Armbian
 sudo rsync -aAXv --exclude='/boot/*' armbian-rootfs/ mnt/ik316-custom/ # Copia toda a pasta rootfs do Armbian, menos o /boot
-
-# Desmontar
-sudo umount mnt/ik316-custom/
-sudo kpartx -d $LOOP
-sudo losetup -d $LOOP
 ```
 
 ## Etapa 6 - Substituir todos os arquivos do diretório /boot do rootfs da iso-custom pelos arquivos contido na pasta "boot-miniarch"
 Nessa etapa são utilizados os arquivos de boot do Miniarch que são compatíveis com esse modelo de Tv Box. Além disso, é copiado o init do armbian para o boot da iso.
 
 ```shell
-fdisk -l ik316-custom.img # Identifica qual partição é rootfs
-
-# Criar loop
-LOOP=$(sudo losetup -f --show ik316-custom.img)
-echo $LOOP
-
-# Adicionar partições
-sudo partprobe $LOOP # Atualiza tabelas
-sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
-
-# Montar partição e copiar os arquivos com links simbólicos
-mount /dev/mapper/loopXpX mnt/ik316-custom/ # Montar o loop referente a partição rootfs do ik316-custom.img
-
 sudo rsync -aAXv miniarch-boot/* mnt/ik316-custom/boot/
 sudo rsync -aAXv armbian-boot/initrd.img-6.12.47-current-sunxi64 mnt/ik316-custom/boot/initramfs-linux.img
-
-# Desmontar
-sudo umount mnt/ik316-custom/
-sudo kpartx -d $LOOP
-sudo losetup -d $LOOP
 ```
 
 ## Etapa 7 - Editar os caminhos no extlinux.conf e do fstab da iso-custom
 
 ```shell
-fdisk -l ik316-custom.img # Identifica qual partição é rootfs
-
-# Criar loop
-LOOP=$(sudo losetup -f --show ik316-custom.img)
-echo $LOOP
-
-# Adicionar partições
-sudo partprobe $LOOP # Atualiza tabelas
-sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
-
-# Montar partição e copiar os arquivos com links simbólicos
-mount /dev/mapper/loopXpX mnt/ik316-custom/ # Montar o loop referente a partição rootfs do ik316-custom.img
-
 ### Editando o extlinux.conf ###
 sudo tee mnt/ik316-custom/boot/extlinux/extlinux.conf > /dev/null <<'EOF'
 LABEL ik316-custom
@@ -209,29 +148,11 @@ sudo tee mnt/ik316-custom/etc/fstab > /dev/null <<'EOF'
 /dev/mmcblk0p1    /              ext4    defaults,commit=120,errors=remount-ro  0      1
 tmpfs             /tmp           tmpfs   defaults,nosuid                        0      0
 EOF
-
-# Desmontar
-sudo umount mnt/ik316-custom/
-sudo kpartx -d $LOOP
-sudo losetup -d $LOOP
 ```
 
 ## Etapa 8 - Substituir o modules e o firmware do armbian pelo do miniarch
 
 ```shell
-fdisk -l ik316-custom.img # Identifica qual partição é rootfs
-
-# Criar loop
-LOOP=$(sudo losetup -f --show ik316-custom.img)
-echo $LOOP
-
-# Adicionar partições
-sudo partprobe $LOOP # Atualiza tabelas
-sudo kpartx -av $LOOP # Cria as partições em dispositivos virtuais
-
-# Montar partição e copiar os arquivos com links simbólicos
-mount /dev/mapper/loopXpX mnt/ik316-custom/ # Montar o loop referente a partição rootfs do ik316-custom.img
-
 # Apagar módulos e firmwares do Armbian
 sudo rm -rf mnt/ik316-custom/lib/modules/*
 sudo rm -rf mnt/ik316-custom/lib/firmware/*
