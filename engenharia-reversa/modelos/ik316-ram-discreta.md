@@ -166,3 +166,10 @@ sudo umount mnt/ik316-custom/
 sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
 ```
+
+## Etapa 9 - Gravar o cartão ou pendrive bootavel
+
+```shell
+sudo fdisk -l
+sudo dd if=ik316-custom.img of=/dev/sdX bs=4M status=progress conv=fsync
+```
