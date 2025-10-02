@@ -167,9 +167,18 @@ sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
 ```
 
+## Opcional (Expansão de memória)
+
+Talvez seja interessante uma ISO que pese 4GB, por exemplo, se expandir para o maximo de memoria depois da inicializada. Para isso use o comando abaixo, colocando o caminho do diretório onde a ISO está montada.
+
+```shell
+sudo systemctl --root=/home/user/pastaMontada/ enable armbian-resize-filesystem.service
+```
+
 ## Etapa 9 - Gravar o cartão ou pendrive bootavel
 
 ```shell
 sudo fdisk -l
 sudo dd if=ik316-custom.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
+
