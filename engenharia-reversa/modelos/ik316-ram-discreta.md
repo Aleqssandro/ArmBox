@@ -150,6 +150,15 @@ tmpfs             /tmp           tmpfs   defaults,nosuid                        
 EOF
 ```
 
+## Opcional (Expansão de memória)
+
+Talvez seja interessante uma ISO que pese 4GB, por exemplo, se expandir para o maximo de memoria depois da inicializada. Para isso use o comando abaixo, colocando o caminho do diretório onde a ISO está montada.
+
+```shell
+sudo systemctl --root=/home/user/pastaMontada/ enable armbian-resize-filesystem.service
+```
+
+
 ## Etapa 8 - Substituir o modules e o firmware do armbian pelo do miniarch
 
 ```shell
@@ -165,14 +174,6 @@ sudo rsync -aAXv miniarch-rootfs/lib/firmware/ mnt/ik316-custom/lib/firmware/
 sudo umount mnt/ik316-custom/
 sudo kpartx -d $LOOP
 sudo losetup -d $LOOP
-```
-
-## Opcional (Expansão de memória)
-
-Talvez seja interessante uma ISO que pese 4GB, por exemplo, se expandir para o maximo de memoria depois da inicializada. Para isso use o comando abaixo, colocando o caminho do diretório onde a ISO está montada.
-
-```shell
-sudo systemctl --root=/home/user/pastaMontada/ enable armbian-resize-filesystem.service
 ```
 
 ## Etapa 9 - Gravar o cartão ou pendrive bootavel
